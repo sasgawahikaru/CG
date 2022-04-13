@@ -2,7 +2,7 @@
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
-	OutputDebugStringA("Hello,DirectX!!\n");
+	OutputDebugStringA("114514 Hello,DirectX 415411!!\n");
 
 	return 0;
 }
