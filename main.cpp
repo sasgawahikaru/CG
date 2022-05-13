@@ -222,10 +222,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	MSG msg{};
 	/////////////////////
 	// 頂点データ
-	XMFLOAT3 vertices[] = {
-	{ -0.5f, -0.5f, 0.0f }, // 左下
-	{ -0.5f, +0.5f, 0.0f }, // 左上
-	{ +0.5f, -0.5f, 0.0f }, // 右下
+	XMFLOAT3 vertices[] =
+	{
+		{ -0.5f, -0.5f, 0.0f }, // 左下
+		{ -0.5f, +0.5f, 0.0f }, // 左上
+		{ +0.5f, -0.5f, 0.0f }, // 右下
+//		{ +0.5f, -0.5f, 0.0f }, // 右下
+		{ -0.5f,  0.0f, 0.0f }, // 左中
+		{ +0.5f,  0.0f, 0.0f }, // 右中
+//		{ -0.5f, +0.5f, 0.0f }, // 左上
+		{ +0.5f, +0.5f, 0.0f }, // 右上
 	};
 	// 頂点データ全体のサイズ = 頂点データ一つ分のサイズ * 頂点データの要素数
 	UINT sizeVB = static_cast<UINT>(sizeof(XMFLOAT3) * _countof(vertices));
@@ -356,9 +362,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
 
 	//加算
-//	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
-//	blenddesc.SrcBlend = D3D12_BLEND_ONE;
-//	blenddesc.DestBlend = D3D12_BLEND_ONE;
+	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
+	blenddesc.SrcBlend = D3D12_BLEND_ONE;
+	blenddesc.DestBlend = D3D12_BLEND_ONE;
 	//減算
 //	blenddesc.BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;
 //	blenddesc.SrcBlend = D3D12_BLEND_ONE;
@@ -368,9 +374,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 //	blenddesc.SrcBlend = D3D12_BLEND_INV_DEST_COLOR;
 //	blenddesc.DestBlend = D3D12_BLEND_ZERO;
 	//半透明
-	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+//	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
+//	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+//	blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
 
 	// 頂点レイアウトの設定
 	pipelineDesc.InputLayout.pInputElementDescs = inputLayout;
@@ -451,7 +457,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(result));
 
 	// 値を書き込むと自動的に転送される
-	constMapMaterial->color = XMFLOAT4(1, 0, 0, 0.5f);              // RGBAで半透明の赤
+	constMapMaterial->color = XMFLOAT4(1, 1, 1,1);              // RGBAで半透明の赤
 
 ///////////////
 	//ゲームループ
