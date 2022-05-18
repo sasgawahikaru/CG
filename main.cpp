@@ -222,12 +222,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	MSG msg{};
 	/////////////////////
 	// 頂点データ
-	XMFLOAT3 vertices[] =
+	struct Vertex
 	{
-		{ -0.5f, -0.5f, 0.0f }, // 左下 インデックス0
-		{ -0.5f, +0.5f, 0.0f }, // 左上 インデックス1
-		{ +0.5f, -0.5f, 0.0f }, // 右下 インデックス2
-		{ +0.5f, +0.5f, 0.0f }, // 右上 インデックス3
+		XMFLOAT3 pos;
+		XMFLOAT2 uv;
+	};
+	Vertex vertices[] =
+	{
+		{{ -0.4f, -0.7f, 0.0f},{0.0f,1.0f}},// 左下 インデックス0
+		{{ -0.4f, +0.7f, 0.0f},{0.0f,0.0f}},// 左上 インデックス1
+		{{ +0.4f, -0.7f, 0.0f},{1.0f,0.0f}},// 右下 インデックス2
+		{{ +0.4f, +0.7f, 0.0f},{1.0f,0.0f}},// 右上 インデックス3
 //		{ +0.5f, -0.5f, 0.0f }, // 右下
 //		{ -0.5f,  0.0f, 0.0f }, // 左中
 //		{ +0.5f,  0.0f, 0.0f }, // 右中
@@ -235,13 +240,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	};
 	//インデックスデータ
-	uint16_t indices[] =
+	unsigned short  indices[] =
 	{
 	0,1,2,
 	1,2,3,
 	};
 	// 頂点データ全体のサイズ = 頂点データ一つ分のサイズ * 頂点データの要素数
-	UINT sizeVB = static_cast<UINT>(sizeof(XMFLOAT3) * _countof(vertices));
+	UINT sizeVB = static_cast<UINT>(sizeof(vertices[0]) * _countof(vertices));
 
 	// 頂点バッファの設定
 	D3D12_HEAP_PROPERTIES heapProp{}; // ヒープ設定
@@ -268,7 +273,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(result));
 
 	// GPU上のバッファに対応した仮想メモリ(メインメモリ上)を取得
-	XMFLOAT3* vertMap = nullptr;
+	Vertex* vertMap = nullptr;
 	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
 	assert(SUCCEEDED(result));
 	// 全頂点に対して
@@ -285,7 +290,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// 頂点バッファのサイズ
 	vbView.SizeInBytes = sizeVB;
 	// 頂点1つ分のデータサイズ
-	vbView.StrideInBytes = sizeof(XMFLOAT3);
+	vbView.StrideInBytes = sizeof(vertices[0]);
 
 
 	// インデックスデータ全体のサイズ
@@ -361,16 +366,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// 頂点レイアウト
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
 	{
-	"POSITION",
-	0,
-	DXGI_FORMAT_R32G32B32_FLOAT,
-	0,
+	"POSITION",	0,DXGI_FORMAT_R32G32B32_FLOAT,0,
 	D3D12_APPEND_ALIGNED_ELEMENT,
-	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
-	0
+	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0
 	}, // (1行で書いたほうが見やすい)
+		{
+	"TEXCOORD",	0,DXGI_FORMAT_R32G32_FLOAT,0,
+	D3D12_APPEND_ALIGNED_ELEMENT,
+	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0
+	},
 	};
-
 	// グラフィックスパイプライン設定
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineDesc{};
 
