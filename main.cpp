@@ -18,6 +18,7 @@ using namespace DirectX;
 #pragma comment(lib,"dinput8.lib")
 #pragma comment(lib,"dxguid.lib")
 
+#include <DirectXTex.h>
 
 LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	//メッセージに応じた固有処理
@@ -231,7 +232,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	{
 		{{ -0.4f, -0.7f, 0.0f},{0.0f,1.0f}},// 左下 インデックス0
 		{{ -0.4f, +0.7f, 0.0f},{0.0f,0.0f}},// 左上 インデックス1
-		{{ +0.4f, -0.7f, 0.0f},{1.0f,0.0f}},// 右下 インデックス2
+		{{ +0.4f, -0.7f, 0.0f},{1.0f,1.0f}},// 右下 インデックス2
 		{{ +0.4f, +0.7f, 0.0f},{1.0f,0.0f}},// 右上 インデックス3
 //		{ +0.5f, -0.5f, 0.0f }, // 右下
 //		{ -0.5f,  0.0f, 0.0f }, // 左中
@@ -402,15 +403,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
 	//ブレンド基礎
-	blenddesc.BlendEnable = true;
-	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;
-	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
+//	blenddesc.BlendEnable = true;
+//	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+//	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;
+//	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
 
 	//加算
-	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlend = D3D12_BLEND_ONE;
-	blenddesc.DestBlend = D3D12_BLEND_ONE;
+//	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
+//	blenddesc.SrcBlend = D3D12_BLEND_ONE;
+//	blenddesc.DestBlend = D3D12_BLEND_ONE;
 	//減算
 //	blenddesc.BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;
 //	blenddesc.SrcBlend = D3D12_BLEND_ONE;
@@ -530,37 +531,52 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(result));
 
 	// 値を書き込むと自動的に転送される
-	constMapMaterial->color = XMFLOAT4(1, 1, 1,1);              // RGBAで半透明の赤
+	constMapMaterial->color = XMFLOAT4(1, 1, 1, 1);              // RGBAで半透明の赤
 
-	// 横方向ピクセル数
-	const size_t textureWidth = 256;
-	// 縦方向ピクセル数
-	const size_t textureHeight = 256;
-	// 配列の要素数
-	const size_t imageDataCount = textureWidth * textureHeight;
-	// 画像イメージデータ配列
-	XMFLOAT4* imageData = new XMFLOAT4[imageDataCount]; // ※必ず後で解放する
 
-	// 全ピクセルの色を初期化
-	for (size_t i = 0; i < imageDataCount; i++) {
-		imageData[i].x = 1.0f;    // R
-		imageData[i].y = 0.0f;    // G
-		imageData[i].z = 0.0f;    // B
-		imageData[i].w = 1.0f;    // A
+	TexMetadata metadata{};
+	ScratchImage scratchImg{};
+	// WICテクスチャのロード
+	result = LoadFromWICFile(
+		L"Resources/senpai.png",   //「Resources」フォルダの「texture.png」
+		WIC_FLAGS_NONE,
+		&metadata, scratchImg);
+
+	ScratchImage mipChain{};
+	// ミップマップ生成
+	result = GenerateMipMaps(
+		scratchImg.GetImages(), scratchImg.GetImageCount(), scratchImg.GetMetadata(),
+		TEX_FILTER_DEFAULT, 0, mipChain);
+	if (SUCCEEDED(result)) {
+		scratchImg = std::move(mipChain);
+		metadata = scratchImg.GetMetadata();
 	}
+	// 読み込んだディフューズテクスチャをSRGBとして扱う
+	metadata.format = MakeSRGB(metadata.format);
 
 	// ヒープ設定
 	D3D12_HEAP_PROPERTIES textureHeapProp{};
 	textureHeapProp.Type = D3D12_HEAP_TYPE_CUSTOM;
 	textureHeapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
 	textureHeapProp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
+
 	// リソース設定
 	D3D12_RESOURCE_DESC textureResourceDesc{};
-	textureResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; textureResourceDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; textureResourceDesc.Width = textureWidth;  // 幅
-	textureResourceDesc.Height = textureWidth; // 高さ
-	textureResourceDesc.DepthOrArraySize = 1;
-	textureResourceDesc.MipLevels = 1;
+	textureResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	textureResourceDesc.Format = metadata.format;
+	textureResourceDesc.Width = metadata.width;
+	textureResourceDesc.Height = (UINT)metadata.height;
+	textureResourceDesc.DepthOrArraySize = (UINT16)metadata.arraySize;
+	textureResourceDesc.MipLevels = (UINT16)metadata.mipLevels;
 	textureResourceDesc.SampleDesc.Count = 1;
+
+	// リソース設定
+//	D3D12_RESOURCE_DESC textureResourceDesc{};
+//	textureResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; textureResourceDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; textureResourceDesc.Width = textureWidth;  // 幅
+//	textureResourceDesc.Height = textureWidth; // 高さ
+//	textureResourceDesc.DepthOrArraySize = 1;
+//	textureResourceDesc.MipLevels = 1;
+//	textureResourceDesc.SampleDesc.Count = 1;
 
 	// テクスチャバッファの生成
 	ID3D12Resource* texBuff = nullptr;
@@ -572,17 +588,33 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		nullptr,
 		IID_PPV_ARGS(&texBuff));
 
-	// テクスチャバッファにデータ転送
-	result = texBuff->WriteToSubresource(
-		0,
-		nullptr, // 全領域へコピー
-		imageData,    // 元データアドレス
-		sizeof(XMFLOAT4) * textureWidth, // 1ラインサイズ
-		sizeof(XMFLOAT4) * imageDataCount // 全サイズ
-	);
+	//// テクスチャバッファにデータ転送
+	//result = texBuff->WriteToSubresource(
+	//	0,
+	//	nullptr, // 全領域へコピー
+	//	imageData,    // 元データアドレス
+	//	sizeof(XMFLOAT4) * textureWidth, // 1ラインサイズ
+	//	sizeof(XMFLOAT4) * imageDataCount // 全サイズ
+	//);
+
+	// 全ミップマップについて
+	for (size_t i = 0; i < metadata.mipLevels; i++) {
+		// ミップマップレベルを指定してイメージを取得
+		const Image* img = scratchImg.GetImage(i, 0, 0);
+		// テクスチャバッファにデータ転送
+		result = texBuff->WriteToSubresource(
+			(UINT)i,
+			nullptr,              // 全領域へコピー
+			img->pixels,          // 元データアドレス
+			(UINT)img->rowPitch,  // 1ラインサイズ
+			(UINT)img->slicePitch // 1枚サイズ
+		);
+		assert(SUCCEEDED(result));
+	}
+
 
 	// 元データ解放
-	delete[] imageData;
+//	delete[] imageData;
 
 	// SRVの最大個数
 	const size_t kMaxSRVCount = 2056;
@@ -602,15 +634,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = srvHeap->GetCPUDescriptorHandleForHeapStart();
 
 	// シェーダリソースビュー設定
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{}; // 設定構造体
-	srvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;//RGBA float
+//	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{}; // 設定構造体
+//	srvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;//RGBA float
+//	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+//	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;//2Dテクスチャ
+//	srvDesc.Texture2D.MipLevels = 1;
+
+	// シェーダリソースビュー設定
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+	srvDesc.Format = resDesc.Format;
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;//2Dテクスチャ
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
 
 	// ハンドルの指す位置にシェーダーリソースビュー作成
 	device->CreateShaderResourceView(texBuff, &srvDesc, srvHandle);
-
 
 	///////////////
 	//ゲームループ
