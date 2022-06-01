@@ -1,7 +1,7 @@
 // マテリアル
-cbuffer ConstBufferDataMaterial : register(b0) {
+cbuffer ConstBufferDataTransform : register(b1) {
 	// 色(RGBA)
-	float4 color;
+	matrix mat;
 };
 
 // 頂点シェーダーの出力構造体
