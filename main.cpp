@@ -230,14 +230,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	};
 	Vertex vertices[] =
 	{
-		{{  0.0f, 100.0f, 0.0f},{0.0f,1.0f}},// 左下 インデックス0
-		{{  0.0f,   0.0f, 0.0f},{0.0f,0.0f}},// 左上 インデックス1
-		{{100.0f, 100.0f, 0.0f},{1.0f,1.0f}},// 右下 インデックス2
-		{{100.0f,   0.0f, 0.0f},{1.0f,0.0f}},// 右上 インデックス3
-//		{ +0.5f, -0.5f, 0.0f }, // 右下
-//		{ -0.5f,  0.0f, 0.0f }, // 左中
-//		{ +0.5f,  0.0f, 0.0f }, // 右中
-//		{ -0.5f, +0.5f, 0.0f }, // 左上
+		{{-50.0f, -50.0f, 50.0f},{0.0f,1.0f}},// 左下 インデックス0
+		{{-50.0f,  50.0f, 50.0f},{0.0f,0.0f}},// 左上 インデックス1
+		{{ 50.0f, -50.0f, 50.0f},{1.0f,1.0f}},// 右下 インデックス2
+		{{ 50.0f,  50.0f, 50.0f},{1.0f,0.0f}},// 右上 インデックス3
 
 	};
 	//インデックスデータ
@@ -505,6 +501,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	struct ConstBufferDataMaterial {
 		XMFLOAT4 color; // 色 (RGBA)
 	};
+
 	//
 	struct ConstBufferDataTransform {
 		XMMATRIX mat;
@@ -543,11 +540,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// 値を書き込むと自動的に転送される
 //	constMapMaterial->color = XMFLOAT4(1, 1, 1, 1);              // RGBAで半透明の赤
 
-	constMapTransform->mat = XMMatrixIdentity();
-	constMapTransform->mat.r[0].m128_f32[0] = 2.0f / 1280;
-	constMapTransform->mat.r[1].m128_f32[1] = -2.0f / 720;
-	constMapTransform->mat.r[3].m128_f32[0] = -1.0f;
-	constMapTransform->mat.r[3].m128_f32[1] = 1.0f;
+	constMapTransform->mat = XMMatrixOrthographicOffCenterLH(0.0f,50.0f,50.0f,0.0f,0.0f,1.0f);
+//	constMapTransform->mat.r[0].m128_f32[0] = 2.0f / 1280;
+//	constMapTransform->mat.r[1].m128_f32[1] = -2.0f / 720;
+//	constMapTransform->mat.r[3].m128_f32[0] = -1.0f;
+//	constMapTransform->mat.r[3].m128_f32[1] = 1.0f;
+
+	//透視投影行列の計算
+	constMapTransform->mat = XMMatrixPerspectiveFovLH(
+		XMConvertToRadians(45.0f),
+		(float)1280 / 720,
+		0.1f, 1000.0f
+	);
+
+
+
+	//
+//	constMapTransform->mat = matProjection;
 
 	TexMetadata metadata{};
 	ScratchImage scratchImg{};
