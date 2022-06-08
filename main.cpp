@@ -229,11 +229,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		XMFLOAT2 uv;
 	};
 	Vertex vertices[] =
-	{
-		{{-50.0f, -50.0f, 50.0f},{0.0f,1.0f}},// 左下 インデックス0
-		{{-50.0f,  50.0f, 50.0f},{0.0f,0.0f}},// 左上 インデックス1
-		{{ 50.0f, -50.0f, 50.0f},{1.0f,1.0f}},// 右下 インデックス2
-		{{ 50.0f,  50.0f, 50.0f},{1.0f,0.0f}},// 右上 インデックス3
+	{//		X		Y		Z	  u    v
+		{{-50.0f, -50.0f, 0.0f},{0.0f,1.0f}},// 左下 インデックス0
+		{{-50.0f,  50.0f, 0.0f},{0.0f,0.0f}},// 左上 インデックス1
+		{{ 50.0f, -50.0f, 0.0f},{1.0f,1.0f}},// 右下 インデックス2
+		{{ 50.0f,  50.0f, 0.0f},{1.0f,0.0f}},// 右上 インデックス3
 
 	};
 	//インデックスデータ
@@ -546,7 +546,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 //	constMapTransform->mat.r[3].m128_f32[0] = -1.0f;
 //	constMapTransform->mat.r[3].m128_f32[1] = 1.0f;
 
-	//透視投影行列の計算
+	//射影変換行列(透視投影)
+	XMMATRIX matProjection=
 	constMapTransform->mat = XMMatrixPerspectiveFovLH(
 		XMConvertToRadians(45.0f),
 		(float)1280 / 720,
@@ -555,8 +556,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
-	//
-//	constMapTransform->mat = matProjection;
+	//ビュー変換行列
+	XMMATRIX matView;
+	XMFLOAT3 eye(0, 0, -100);	//視点座標
+	XMFLOAT3 target(0, 0, 0);	//注視点座標
+	XMFLOAT3 up(0, 1, 0);	//上方向ベクトル
+	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+
+	constMapTransform->mat = matView*matProjection;
+
+	float angle = 0.0f;
 
 	TexMetadata metadata{};
 	ScratchImage scratchImg{};
@@ -612,7 +621,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		nullptr,
 		IID_PPV_ARGS(&texBuff));
 
-	//// テクスチャバッファにデータ転送
+	// テクスチャバッファにデータ転送
 	//result = texBuff->WriteToSubresource(
 	//	0,
 	//	nullptr, // 全領域へコピー
@@ -690,10 +699,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		BYTE key[256] = {};
 		keyboard->GetDeviceState(sizeof(key), key);
 
-		if (key[DIK_0])
+		if (key[DIK_D] || key[DIK_A])
 		{
-			OutputDebugStringA("Hit 0\n");
+			if (key[DIK_D]) { angle += XMConvertToRadians(1.0f); }
+			else if (key[DIK_A]) { angle -= XMConvertToRadians(1.0f); }
+
+			// angleラジアンだけY軸まわりに回転。半径は-100
+			eye.x = -100 * sinf(angle);
+			eye.z = -100 * cosf(angle);
+
+			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+			//定数バッファにデータ転送
+			constMapTransform->mat = matView * matProjection;
+
 		}
+
+
 		// バックバッファの番号を取得(2つなので0番か1番)
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
 		// 1.リソースバリアで書き込み可能に変更
