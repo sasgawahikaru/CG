@@ -683,7 +683,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// ハンドルの指す位置にシェーダーリソースビュー作成
 	device->CreateShaderResourceView(texBuff, &srvDesc, srvHandle);
 
+	
 	///////////////
+	XMFLOAT3 scale;//大きさ
+	XMFLOAT3 rotation;//回転
+	XMFLOAT3 position;//位置
+	scale = { 1.0f, 1.0f, 1.0f };
+	rotation = { 1.0f, 0.0f, 0.0f };
+	position = { 0.0f, 0.0f, 0.0f };
 	//ゲームループ
 	while (true) {
 		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
@@ -699,20 +706,55 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		BYTE key[256] = {};
 		keyboard->GetDeviceState(sizeof(key), key);
 
-		if (key[DIK_D] || key[DIK_A])
-		{
-			if (key[DIK_D]) { angle += XMConvertToRadians(1.0f); }
-			else if (key[DIK_A]) { angle -= XMConvertToRadians(1.0f); }
+		//if (key[DIK_D] || key[DIK_A])
+		//{
+		//	if (key[DIK_D]) { angle += XMConvertToRadians(1.0f); }
+		//	else if (key[DIK_A]) { angle -= XMConvertToRadians(1.0f); }
 
-			// angleラジアンだけY軸まわりに回転。半径は-100
-			eye.x = -100 * sinf(angle);
-			eye.z = -100 * cosf(angle);
+		//	// angleラジアンだけY軸まわりに回転。半径は-100
+		//	eye.x = -100 * sinf(angle);
+		//	eye.z = -100 * cosf(angle);
 
-			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
-			//定数バッファにデータ転送
-			constMapTransform->mat = matView * matProjection;
-
+		//	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+		//	
+		if (key[DIK_UP] || key[DIK_DOWN] || key[DIK_RIGHT] || key[DIK_LEFT]) {
+			if (key[DIK_UP]) {
+				position.z += 1.0f;
+			}
+			else if (key[DIK_DOWN]) {
+				position.z -= 1.0f;
+			}
+			if (key[DIK_RIGHT]) {
+				position.x += 1.0f;
+			}
+			else if (key[DIK_LEFT]) {
+				position.x -= 1.0f;
+			}
 		}
+			XMMATRIX matWorld;
+
+			//スケーリング
+			XMMATRIX matScale;
+			matScale = XMMatrixScaling(scale.x, scale.y, scale.z);
+
+			XMMATRIX matRot; //回転行列
+			matRot = XMMatrixIdentity();
+			matRot *= XMMatrixRotationZ(rotation.z); // Z軸周りに45度回転
+			matRot *= XMMatrixRotationX(rotation.x); // X軸周りに45度回転
+			matRot *= XMMatrixRotationY(rotation.y); // Y軸周りに45度回転
+
+			XMMATRIX matTrans; //平行移動行列
+			matTrans = XMMatrixTranslation(position.x,position.y,position.z);
+
+			matWorld = XMMatrixIdentity();
+			matWorld *= matScale;
+			matWorld *= matRot;
+			matWorld *= matTrans;
+
+			//定数バッファにデータ転送
+			constMapTransform->mat = matWorld * matView * matProjection;
+
+//		}
 
 
 		// バックバッファの番号を取得(2つなので0番か1番)
