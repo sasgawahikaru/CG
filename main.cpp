@@ -40,7 +40,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		debugController->EnableDebugLayer();
 	}
 #endif
-	OutputDebugStringA("114514 Hello,DirectX 415411!!\n");
+//	OutputDebugStringA("114514 Hello,DirectX 415411!!\n");
 	const int window_width = 1280;
 	const int window_height = 720;
 
@@ -97,7 +97,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// 動的配列に追加する
 		adapters.push_back(tmpAdapter);
 	}
-
 	// 妥当なアダプタを選別する
 	for (size_t i = 0; i < adapters.size(); i++) {
 		DXGI_ADAPTER_DESC3 adapterDesc;
@@ -225,22 +224,63 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// 頂点データ
 	struct Vertex
 	{
-		XMFLOAT3 pos;
-		XMFLOAT2 uv;
+		XMFLOAT3 pos;//xyz座標
+		XMFLOAT3 normal;//法線ベクトル
+		XMFLOAT2 uv;//uv座標
 	};
 	Vertex vertices[] =
 	{//		X		Y		Z	  u    v
-		{{-50.0f, -50.0f, 0.0f},{0.0f,1.0f}},// 左下 インデックス0
-		{{-50.0f,  50.0f, 0.0f},{0.0f,0.0f}},// 左上 インデックス1
-		{{ 50.0f, -50.0f, 0.0f},{1.0f,1.0f}},// 右下 インデックス2
-		{{ 50.0f,  50.0f, 0.0f},{1.0f,0.0f}},// 右上 インデックス3
-
+		//前
+		{{-5.0f, -5.0f, -5.0f},{}, {0.0f,1.0f}},// 左下
+		{{-5.0f,  5.0f, -5.0f},{}, {0.0f,0.0f}},// 左上
+		{{ 5.0f, -5.0f, -5.0f},{}, {1.0f,1.0f}},// 右下
+		{{ 5.0f,  5.0f, -5.0f},{}, {1.0f,0.0f}},// 右上
+		//後
+		{{-5.0f, -5.0f, 5.0f},{}, {0.0f,1.0f}},// 左下
+		{{-5.0f,  5.0f, 5.0f},{}, {0.0f,0.0f}},// 左上
+		{{ 5.0f, -5.0f, 5.0f},{}, {1.0f,1.0f}},// 右下
+		{{ 5.0f,  5.0f, 5.0f},{}, {1.0f,0.0f}},// 右上
+		//左
+		{{-5.0f, -5.0f, -5.0f},{}, {0.0f,1.0f}},// 左下
+		{{-5.0f, -5.0f,  5.0f},{}, {0.0f,0.0f}},// 左上
+		{{-5.0f,  5.0f, -5.0f},{}, {1.0f,1.0f}},// 右下
+		{{-5.0f,  5.0f,  5.0f},{}, {1.0f,0.0f}},// 右上
+		//右
+		{{5.0f, -5.0f, -5.0f},{}, {0.0f,1.0f}},// 左下
+		{{5.0f, -5.0f,  5.0f},{}, {0.0f,0.0f}},// 左上
+		{{5.0f,  5.0f, -5.0f},{}, {1.0f,1.0f}},// 右下
+		{{5.0f,  5.0f,  5.0f},{}, {1.0f,0.0f}},// 右上
+		//下
+		{{-5.0f, -5.0f, -5.0f},{}, {0.0f,1.0f}},// 左下
+		{{-5.0f, -5.0f,  5.0f},{}, {0.0f,0.0f}},// 左上
+		{{ 5.0f, -5.0f, -5.0f},{}, {1.0f,1.0f}},// 右下
+		{{ 5.0f, -5.0f,  5.0f},{}, {1.0f,0.0f}},// 右上
+		//上
+		{{-5.0f, 5.0f, -5.0f},{}, {0.0f,1.0f}},// 左下
+		{{-5.0f, 5.0f,  5.0f},{}, {0.0f,0.0f}},// 左上
+		{{ 5.0f, 5.0f, -5.0f},{}, {1.0f,1.0f}},// 右下
+		{{ 5.0f, 5.0f,  5.0f},{}, {1.0f,0.0f}},// 右上
 	};
 	//インデックスデータ
-	unsigned short  indices[] =
+	uint16_t  indices[] =
 	{
 	0,1,2,
-	1,2,3,
+	2,1,3,
+
+	6,5,4,
+	6,7,5,
+
+	8,9,10,
+	10,9,11,
+
+	14,13,12,
+	14,15,13,
+
+	18,17,16,
+	18,19,17,
+
+	20,21,22,
+	22,21,23,
 	};
 	// 頂点データ全体のサイズ = 頂点データ一つ分のサイズ * 頂点データの要素数
 	UINT sizeVB = static_cast<UINT>(sizeof(vertices[0]) * _countof(vertices));
@@ -366,8 +406,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	"POSITION",	0,DXGI_FORMAT_R32G32B32_FLOAT,0,
 	D3D12_APPEND_ALIGNED_ELEMENT,
 	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0
-	}, // (1行で書いたほうが見やすい)
-		{
+	},
+	{// (1行で書いたほうが見やすい)
+		"NORMAL",0,DXGI_FORMAT_R32G32B32_FLOAT,0,
+		D3D12_APPEND_ALIGNED_ELEMENT,
+		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0
+	},
+	{
 	"TEXCOORD",	0,DXGI_FORMAT_R32G32_FLOAT,0,
 	D3D12_APPEND_ALIGNED_ELEMENT,
 	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0
@@ -384,16 +429,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// サンプルマスクの設定
 	pipelineDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK; // 標準設定
-
+	
 	// ラスタライザの設定
-	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE; // カリングしない
+	//pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE; // カリングしない
+	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK; // 背面をカリング
 	pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID; // ポリゴン内塗りつぶし
 //	pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME; // ワイヤーフレーム
 	pipelineDesc.RasterizerState.DepthClipEnable = true; // 深度クリッピングを有効に
 
 	// ブレンドステート
-	//pipelineDesc.BlendState.RenderTarget[0].RenderTargetWriteMask
-	//	= D3D12_COLOR_WRITE_ENABLE_ALL; // RBGA全てのチャンネルを描画
+	pipelineDesc.BlendState.RenderTarget[0].RenderTargetWriteMask
+		= D3D12_COLOR_WRITE_ENABLE_ALL; // RBGA全てのチャンネルを描画
 
 	D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = pipelineDesc.BlendState.RenderTarget[0];
 	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
@@ -492,6 +538,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// パイプラインにルートシグネチャをセット
 	pipelineDesc.pRootSignature = rootSignature;
 
+	//デプスステンシルステートの設定
+	pipelineDesc.DepthStencilState.DepthEnable = true;//深度テスト
+	pipelineDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;//書き込み許可
+	pipelineDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;//小さければ合格
+	pipelineDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;//深度値フォーマット
+
 	// パイプランステートの生成
 	ID3D12PipelineState* pipelineState = nullptr;
 	result = device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
@@ -571,7 +623,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ScratchImage scratchImg{};
 	// WICテクスチャのロード
 	result = LoadFromWICFile(
-		L"Resources/senpai.png",   //「Resources」フォルダの「texture.png」
+		L"Resources/mario.png",   //「Resources」フォルダの「texture.png」
 		WIC_FLAGS_NONE,
 		&metadata, scratchImg);
 
@@ -604,12 +656,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	textureResourceDesc.SampleDesc.Count = 1;
 
 	// リソース設定
-//	D3D12_RESOURCE_DESC textureResourceDesc{};
-//	textureResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; textureResourceDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; textureResourceDesc.Width = textureWidth;  // 幅
-//	textureResourceDesc.Height = textureWidth; // 高さ
-//	textureResourceDesc.DepthOrArraySize = 1;
-//	textureResourceDesc.MipLevels = 1;
-//	textureResourceDesc.SampleDesc.Count = 1;
+	//D3D12_RESOURCE_DESC textureResourceDesc{};
+	//textureResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	//textureResourceDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	//textureResourceDesc.Width = window_width;  // 幅
+	//textureResourceDesc.Height = window_height; // 高さ
+	//textureResourceDesc.DepthOrArraySize = 1;
+	//textureResourceDesc.MipLevels = 1;
+	//textureResourceDesc.SampleDesc.Count = 1;
 
 	// テクスチャバッファの生成
 	ID3D12Resource* texBuff = nullptr;
@@ -683,13 +737,54 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// ハンドルの指す位置にシェーダーリソースビュー作成
 	device->CreateShaderResourceView(texBuff, &srvDesc, srvHandle);
 
+	//深度リソース
+	D3D12_RESOURCE_DESC depthResourceDesc{};
+	depthResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	depthResourceDesc.Width = window_width;
+	depthResourceDesc.Height = window_height;
+	depthResourceDesc.DepthOrArraySize = 1;
+	depthResourceDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthResourceDesc.SampleDesc.Count = 1;;
+	depthResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+	//深度値用ヒーププロパティ
+	D3D12_HEAP_PROPERTIES depthHeapProp{};
+	depthHeapProp.Type = D3D12_HEAP_TYPE_DEFAULT;
+	//深度値のクリア設定
+	D3D12_CLEAR_VALUE depthClearValue{};
+	depthClearValue.DepthStencil.Depth = 1.0f;//深度値()最大値でクリア
+	depthClearValue.Format = DXGI_FORMAT_D32_FLOAT;//深度値フォーマット
+
+	//リソース設定
+	ID3D12Resource* depthBuff = nullptr;
+	result = device->CreateCommittedResource(
+		&depthHeapProp,
+		D3D12_HEAP_FLAG_NONE,
+		&depthResourceDesc,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+		&depthClearValue,
+		IID_PPV_ARGS(&depthBuff));
+	//深度ビュー用デスクリプタヒープ作成
+	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc{};
+	dsvHeapDesc.NumDescriptors = 1;//深度ビューは1つ
+	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;//デプスステンシルビュー
+	ID3D12DescriptorHeap* dsvHeap = nullptr;
+	result = device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&dsvHeap));
+	//深度ビュー作成
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+	dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	device->CreateDepthStencilView(
+		depthBuff,
+		&dsvDesc,
+		dsvHeap->GetCPUDescriptorHandleForHeapStart());
 	
 	///////////////
 	XMFLOAT3 scale;//大きさ
 	XMFLOAT3 rotation;//回転
 	XMFLOAT3 position;//位置
 	scale = { 1.0f, 1.0f, 1.0f };
-	rotation = { 1.0f, 0.0f, 0.0f };
+	rotation = { 0.0f, 0.0f, 0.0f };
 	position = { 0.0f, 0.0f, 0.0f };
 	//ゲームループ
 	while (true) {
@@ -706,16 +801,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		BYTE key[256] = {};
 		keyboard->GetDeviceState(sizeof(key), key);
 
-		//if (key[DIK_D] || key[DIK_A])
-		//{
-		//	if (key[DIK_D]) { angle += XMConvertToRadians(1.0f); }
-		//	else if (key[DIK_A]) { angle -= XMConvertToRadians(1.0f); }
+		if (key[DIK_D] || key[DIK_A])
+		{
+			if (key[DIK_D]) { angle += XMConvertToRadians(1.0f); }
+			else if (key[DIK_A]) { angle -= XMConvertToRadians(1.0f); }
 
-		//	// angleラジアンだけY軸まわりに回転。半径は-100
-		//	eye.x = -100 * sinf(angle);
-		//	eye.z = -100 * cosf(angle);
-
-		//	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+			// angleラジアンだけY軸まわりに回転。半径は-100
+			eye.x = -100 * sinf(angle);
+			eye.y = -100 * sinf(angle);
+			eye.z = -100 * cosf(angle);
+		}
+			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 		//	
 		if (key[DIK_UP] || key[DIK_DOWN] || key[DIK_RIGHT] || key[DIK_LEFT]) {
 			if (key[DIK_UP]) {
@@ -770,11 +866,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// レンダーターゲットビューのハンドルを取得
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
 		rtvHandle.ptr += bbIndex * device->GetDescriptorHandleIncrementSize(rtvHeapDesc.Type);
-		commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
+		
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
+		commandList->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
+		//commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
 
 		// 3.画面クリア R G B A
 		FLOAT clearColor[] = { 0.1f,0.25f,0.5f,0.0f }; // 青っぽい色
+
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+		commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 		//		if (key[DIK_SPACE])
 		//		{
@@ -817,7 +918,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->SetGraphicsRootSignature(rootSignature);
 
 		// プリミティブ形状の設定コマンド
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP); // 三角形リスト
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 三角形リスト
 
 		// 頂点バッファビューの設定コマンド
 		commandList->IASetVertexBuffers(0, 1, &vbView);
