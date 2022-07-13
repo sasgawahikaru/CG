@@ -40,7 +40,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		debugController->EnableDebugLayer();
 	}
 #endif
-//	OutputDebugStringA("114514 Hello,DirectX 415411!!\n");
+	//	OutputDebugStringA("114514 Hello,DirectX 415411!!\n");
 	const int window_width = 1280;
 	const int window_height = 720;
 
@@ -265,22 +265,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	uint16_t  indices[] =
 	{
 	0,1,2,
-	2,1,3,
+	//2,1,3,
 
-	6,5,4,
-	6,7,5,
+	//6,5,4,
+	//6,7,5,
 
-	8,9,10,
-	10,9,11,
+	//8,9,10,
+	//10,9,11,
 
-	14,13,12,
-	14,15,13,
+	//14,13,12,
+	//14,15,13,
 
-	18,17,16,
-	18,19,17,
+	//18,17,16,
+	//18,19,17,
 
-	20,21,22,
-	22,21,23,
+	//20,21,22,
+	//22,21,23,
 	};
 
 	for (int i = 0; i < _countof(indices) / 3; i++)
@@ -301,9 +301,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//
 		normal = XMVector3Normalize(normal);
 		//
-		XMStoreFloat3(&vertices[indices0].normal,normal);
-		XMStoreFloat3(&vertices[indices1].normal,normal);
-		XMStoreFloat3(&vertices[indices2].normal,normal);
+		XMStoreFloat3(&vertices[indices0].normal, normal);
+		XMStoreFloat3(&vertices[indices1].normal, normal);
+		XMStoreFloat3(&vertices[indices2].normal, normal);
 	}
 	// 頂点データ全体のサイズ = 頂点データ一つ分のサイズ * 頂点データの要素数
 	UINT sizeVB = static_cast<UINT>(sizeof(vertices[0]) * _countof(vertices));
@@ -452,7 +452,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// サンプルマスクの設定
 	pipelineDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK; // 標準設定
-	
+
 	// ラスタライザの設定
 	//pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE; // カリングしない
 	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK; // 背面をカリング
@@ -577,7 +577,41 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		XMFLOAT4 color; // 色 (RGBA)
 	};
 
-	//
+	// ヒープ設定
+	D3D12_HEAP_PROPERTIES cbHeapProp{};
+	cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;                   // GPUへの転送用
+	// リソース設定
+	D3D12_RESOURCE_DESC cbResourceDesc{};
+	cbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	cbResourceDesc.Width = (sizeof(ConstBufferDataMaterial) + 0xff) & ~0xff;   // 256バイトアラインメント
+	cbResourceDesc.Height = 1;
+	cbResourceDesc.DepthOrArraySize = 1;
+	cbResourceDesc.MipLevels = 1;
+	cbResourceDesc.SampleDesc.Count = 1;
+	cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+	ID3D12Resource* constBuffMaterial = nullptr;
+	// 定数バッファの生成
+	result = device->CreateCommittedResource(
+		&cbHeapProp, // ヒープ設定
+		D3D12_HEAP_FLAG_NONE,
+		&cbResourceDesc, // リソース設定
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&constBuffMaterial));
+	assert(SUCCEEDED(result));
+
+	// 定数バッファのマッピング
+	ConstBufferDataMaterial* constMapMaterial = nullptr;
+	result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial); // マッピング
+	assert(SUCCEEDED(result));
+
+	XMFLOAT4 color = { 1,1,1,0 };
+	constMapMaterial->color = color;
+
+
+
+
 	struct ConstBufferDataTransform {
 		XMMATRIX mat;
 	};
@@ -608,26 +642,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		assert(SUCCEEDED(result));
 
 		// 定数バッファのマッピング
-	//		ConstBufferDataMaterial* constMapMaterial = nullptr;
 		result = constBuffTransform->Map(0, nullptr, (void**)&constMapTransform); // マッピング
 		assert(SUCCEEDED(result));
 	}
-	// 値を書き込むと自動的に転送される
-//	constMapMaterial->color = XMFLOAT4(1, 1, 1, 1);              // RGBAで半透明の赤
 
-	constMapTransform->mat = XMMatrixOrthographicOffCenterLH(0.0f,50.0f,50.0f,0.0f,0.0f,1.0f);
-//	constMapTransform->mat.r[0].m128_f32[0] = 2.0f / 1280;
-//	constMapTransform->mat.r[1].m128_f32[1] = -2.0f / 720;
-//	constMapTransform->mat.r[3].m128_f32[0] = -1.0f;
-//	constMapTransform->mat.r[3].m128_f32[1] = 1.0f;
 
-	//射影変換行列(透視投影)
-	XMMATRIX matProjection=
-	constMapTransform->mat = XMMatrixPerspectiveFovLH(
-		XMConvertToRadians(45.0f),
-		(float)1280 / 720,
-		0.1f, 1000.0f
-	);
+	constMapTransform->mat = XMMatrixOrthographicOffCenterLH(0.0f, 50.0f, 50.0f, 0.0f, 0.0f, 1.0f);
+	//	constMapTransform->mat.r[0].m128_f32[0] = 2.0f / 1280;
+	//	constMapTransform->mat.r[1].m128_f32[1] = -2.0f / 720;
+	//	constMapTransform->mat.r[3].m128_f32[0] = -1.0f;
+	//	constMapTransform->mat.r[3].m128_f32[1] = 1.0f;
+
+		//射影変換行列(透視投影)
+	XMMATRIX matProjection =
+		constMapTransform->mat = XMMatrixPerspectiveFovLH(
+			XMConvertToRadians(45.0f),
+			(float)1280 / 720,
+			0.1f, 1000.0f
+		);
 
 
 
@@ -638,7 +670,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	XMFLOAT3 up(0, 1, 0);	//上方向ベクトル
 	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 
-	constMapTransform->mat = matView*matProjection;
+	constMapTransform->mat = matView * matProjection;
 
 	float angle = 0.0f;
 
@@ -801,7 +833,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		depthBuff,
 		&dsvDesc,
 		dsvHeap->GetCPUDescriptorHandleForHeapStart());
-	
+
 	///////////////
 	XMFLOAT3 scale;//大きさ
 	XMFLOAT3 rotation;//回転
@@ -834,7 +866,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			eye.y = -100 * sinf(angle);
 			eye.z = -100 * cosf(angle);
 		}
-			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+		matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 		//	
 		if (key[DIK_UP] || key[DIK_DOWN] || key[DIK_RIGHT] || key[DIK_LEFT]) {
 			if (key[DIK_UP]) {
@@ -850,33 +882,33 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				position.x -= 1.0f;
 			}
 		}
-			XMMATRIX matWorld;
+		XMMATRIX matWorld;
 
-			//スケーリング
-			XMMATRIX matScale;
-			matScale = XMMatrixScaling(scale.x, scale.y, scale.z);
+		//スケーリング
+		XMMATRIX matScale;
+		matScale = XMMatrixScaling(scale.x, scale.y, scale.z);
 
-			XMMATRIX matRot; //回転行列
-			matRot = XMMatrixIdentity();
-			matRot *= XMMatrixRotationZ(rotation.z); // Z軸周りに45度回転
-			matRot *= XMMatrixRotationX(rotation.x); // X軸周りに45度回転
-			matRot *= XMMatrixRotationY(rotation.y); // Y軸周りに45度回転
+		XMMATRIX matRot; //回転行列
+		matRot = XMMatrixIdentity();
+		matRot *= XMMatrixRotationZ(rotation.z); // Z軸周りに45度回転
+		matRot *= XMMatrixRotationX(rotation.x); // X軸周りに45度回転
+		matRot *= XMMatrixRotationY(rotation.y); // Y軸周りに45度回転
 
-			XMMATRIX matTrans; //平行移動行列
-			matTrans = XMMatrixTranslation(position.x,position.y,position.z);
+		XMMATRIX matTrans; //平行移動行列
+		matTrans = XMMatrixTranslation(position.x, position.y, position.z);
 
-			matWorld = XMMatrixIdentity();
-			matWorld *= matScale;
-			matWorld *= matRot;
-			matWorld *= matTrans;
+		matWorld = XMMatrixIdentity();
+		matWorld *= matScale;
+		matWorld *= matRot;
+		matWorld *= matTrans;
 
-			//定数バッファにデータ転送
-			constMapTransform->mat = matWorld * matView * matProjection;
+		//定数バッファにデータ転送
+		constMapTransform->mat = matWorld * matView * matProjection;
 
-//		}
+		//		}
 
 
-		// バックバッファの番号を取得(2つなので0番か1番)
+				// バックバッファの番号を取得(2つなので0番か1番)
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
 		// 1.リソースバリアで書き込み可能に変更
 		D3D12_RESOURCE_BARRIER barrierDesc{};
@@ -889,7 +921,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// レンダーターゲットビューのハンドルを取得
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
 		rtvHandle.ptr += bbIndex * device->GetDescriptorHandleIncrementSize(rtvHeapDesc.Type);
-		
+
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
 		commandList->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
 		//commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
@@ -947,7 +979,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->IASetVertexBuffers(0, 1, &vbView);
 
 		// 定数バッファビュー(CBV)の設定コマンド
-		//commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
+		commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
 		// SRVヒープの設定コマンド
 		commandList->SetDescriptorHeaps(1, &srvHeap);
 		// SRVヒープの先頭ハンドルを取得（SRVを指しているはず）
@@ -967,6 +999,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->IASetIndexBuffer(&ibView);
 
 		// 描画コマンド
+		//commandList->DrawInstanced(_countof(vertices), 1, 0, 0); // 全ての頂点を使って描画
 		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0); // 全ての頂点を使って描画
 
 
