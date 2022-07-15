@@ -34,13 +34,12 @@ LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #ifdef _DEBUG
-	//デバッグレイヤーをオンに
+	//デバックレイヤーをオンに
 	ID3D12Debug* debugController;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
 		debugController->EnableDebugLayer();
 	}
 #endif
-	//	OutputDebugStringA("114514 Hello,DirectX 415411!!\n");
 	const int window_width = 1280;
 	const int window_height = 720;
 
@@ -76,7 +75,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ID3D12Device* device = nullptr;
 	IDXGIFactory7* dxgiFactory = nullptr;
 	IDXGISwapChain4* swapChain = nullptr;
-	ID3D12CommandAllocator* cmdAllocator = nullptr;
+	ID3D12CommandAllocator* commandAlocator = nullptr;
 	ID3D12GraphicsCommandList* commandList = nullptr;
 	ID3D12CommandQueue* commandQueue = nullptr;
 	ID3D12DescriptorHeap* rtvHeap = nullptr;
@@ -134,17 +133,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	result = device->CreateCommandAllocator(
 		D3D12_COMMAND_LIST_TYPE_DIRECT,
-		IID_PPV_ARGS(&cmdAllocator));
+		IID_PPV_ARGS(&commandAlocator));
 	assert(SUCCEEDED(result));
 
 	// コマンドリストを生成
 	result = device->CreateCommandList(0,
 		D3D12_COMMAND_LIST_TYPE_DIRECT,
-		cmdAllocator, nullptr,
+		commandAlocator, nullptr,
 		IID_PPV_ARGS(&commandList));
-	//	assert(SUCCEEDED(result));
+	assert(SUCCEEDED(result));
 
-		//コマンドキューの設定
+	//コマンドキューの設定
 	D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
 	//コマンドキューを生成
 	result = device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue));
@@ -454,8 +453,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	pipelineDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK; // 標準設定
 
 	// ラスタライザの設定
-	//pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE; // カリングしない
-	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK; // 背面をカリング
+	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE; // カリングしない
+	//pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK; // 背面をカリング
 	pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID; // ポリゴン内塗りつぶし
 //	pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME; // ワイヤーフレーム
 	pipelineDesc.RasterizerState.DepthClipEnable = true; // 深度クリッピングを有効に
@@ -468,12 +467,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
 	//ブレンド基礎
-//	blenddesc.BlendEnable = true;
-//	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-//	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;
-//	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
+	blenddesc.BlendEnable = true;
+	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;
+	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
 
-	//加算
+	////加算
 //	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
 //	blenddesc.SrcBlend = D3D12_BLEND_ONE;
 //	blenddesc.DestBlend = D3D12_BLEND_ONE;
@@ -486,9 +485,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 //	blenddesc.SrcBlend = D3D12_BLEND_INV_DEST_COLOR;
 //	blenddesc.DestBlend = D3D12_BLEND_ZERO;
 	//半透明
-//	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
-//	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
-//	blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
+	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
 
 	// 頂点レイアウトの設定
 	pipelineDesc.InputLayout.pInputElementDescs = inputLayout;
@@ -606,10 +605,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial); // マッピング
 	assert(SUCCEEDED(result));
 
-	XMFLOAT4 color = { 1,1,0,1 };
-	//constMapMaterial->color = color;
+	XMFLOAT4 color = { 0,0,1,1 };
 
-
+	constMapMaterial->color = color;
 
 	struct ConstBufferDataTransform {
 		XMMATRIX mat;
@@ -833,9 +831,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			break;
 		}
 		constMapMaterial->color = color;
-		color.x += 0.01f;
 
-
+		color.x += 0.001f;
 
 
 
@@ -852,6 +849,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			// angleラジアンだけY軸まわりに回転。半径は-100
 			eye.x = -100 * sinf(angle);
+			eye.z = -100 * cosf(angle);
+		}
+		if (key[DIK_W] || key[DIK_S])
+		{
+			if (key[DIK_W]) { angle += XMConvertToRadians(1.0f); }
+			else if (key[DIK_S]) { angle -= XMConvertToRadians(1.0f); }
+
+			// angleラジアンだけY軸まわりに回転。半径は-100
 			eye.y = -100 * sinf(angle);
 			eye.z = -100 * cosf(angle);
 		}
@@ -1020,10 +1025,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			CloseHandle(event);
 		}
 		// キューをクリア
-		result = cmdAllocator->Reset();
+		result = commandAlocator->Reset();
 		assert(SUCCEEDED(result));
 		// 再びコマンドリストを貯める準備
-		result = commandList->Reset(cmdAllocator, nullptr);
+		result = commandList->Reset(commandAlocator, nullptr);
 		assert(SUCCEEDED(result));
 		//**************************
 

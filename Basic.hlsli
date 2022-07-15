@@ -4,7 +4,7 @@ cbuffer ConstBufferDataMaterial : register(b0) {
 	float4 color;
 };// マテリアル
 cbuffer ConstBufferDataTransform : register(b1) {
-	// 色(RGBA)
+	//
 	matrix mat;
 };
 
