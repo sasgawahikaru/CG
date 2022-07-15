@@ -606,9 +606,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial); // マッピング
 	assert(SUCCEEDED(result));
 
-	XMFLOAT4 color = { 1,1,1,0 };
-	constMapMaterial->color = color;
-
+	XMFLOAT4 color = { 1,1,0,1 };
+	//constMapMaterial->color = color;
 
 
 
@@ -710,16 +709,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	textureResourceDesc.MipLevels = (UINT16)metadata.mipLevels;
 	textureResourceDesc.SampleDesc.Count = 1;
 
-	// リソース設定
-	//D3D12_RESOURCE_DESC textureResourceDesc{};
-	//textureResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	//textureResourceDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	//textureResourceDesc.Width = window_width;  // 幅
-	//textureResourceDesc.Height = window_height; // 高さ
-	//textureResourceDesc.DepthOrArraySize = 1;
-	//textureResourceDesc.MipLevels = 1;
-	//textureResourceDesc.SampleDesc.Count = 1;
-
 	// テクスチャバッファの生成
 	ID3D12Resource* texBuff = nullptr;
 	result = device->CreateCommittedResource(
@@ -774,13 +763,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//SRVヒープの先頭ハンドルを取得
 	D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = srvHeap->GetCPUDescriptorHandleForHeapStart();
-
-	// シェーダリソースビュー設定
-//	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{}; // 設定構造体
-//	srvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;//RGBA float
-//	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-//	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;//2Dテクスチャ
-//	srvDesc.Texture2D.MipLevels = 1;
 
 	// シェーダリソースビュー設定
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
@@ -850,6 +832,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		if (msg.message == WM_QUIT) {
 			break;
 		}
+		constMapMaterial->color = color;
+		color.x += 0.01f;
+
+
+
+
+
 		//**************************
 			//キーボード情報取得
 		keyboard->Acquire();
@@ -905,6 +894,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//定数バッファにデータ転送
 		constMapTransform->mat = matWorld * matView * matProjection;
 
+
 		//		}
 
 
@@ -924,7 +914,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
 		commandList->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
-		//commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
+		commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
 
 		// 3.画面クリア R G B A
 		FLOAT clearColor[] = { 0.1f,0.25f,0.5f,0.0f }; // 青っぽい色
